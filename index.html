@@ -196,7 +196,7 @@
     bgmAudio: null,  // 鑳屾櫙闊充箰(Funky House 寰幆)
     muted: false,
     sampleFiles: {
-      voice: 'let_bullets_fly.mp3',
+      voice: 'let_bullets_fly_loud.mp3',
       gunshot: 'gunshot.mp3',
       ricochet: 'bullet_ricochet_sounddino.mp3',
       explosion: 'dynamite_explosion_mixkit.mp3',
@@ -239,7 +239,7 @@
         this.master.gain.value = 0.70;
         this.master.connect(this.ctx.destination);
         // 鍑嗗棣栧皠鍘熷０(瀹屾暣鐗?淇濈暀"璁╁瓙寮归涓€浼氬効"鐏甸瓊)
-        this.voiceAudio = new Audio('assets/let_bullets_fly.mp3');
+        this.voiceAudio = new Audio('assets/let_bullets_fly_loud.mp3');
         this.voiceAudio.preload = 'auto';
         this.voiceAudio.volume = 1.0;
         // 鍑嗗鍚庣画寮€鐏０(鐢ㄦ埛瑁佸壀鐨勭函鏋０)
@@ -324,17 +324,7 @@
         src.playbackRate.value = rate != null ? rate : 1.0;
         const g = this.ctx.createGain();
         g.gain.value = vol != null ? vol : 1.0;
-        if (name === 'voice') {
-          const compressor = this.ctx.createDynamicsCompressor();
-          compressor.threshold.value = -20;
-          compressor.knee.value = 14;
-          compressor.ratio.value = 6;
-          compressor.attack.value = 0.003;
-          compressor.release.value = 0.24;
-          src.connect(g).connect(compressor).connect(this.ctx.destination);
-        } else {
-          src.connect(g).connect(this.master);
-        }
+        src.connect(g).connect(this.master);
         src.start(this.ctx.currentTime, offset || 0);
         return true;
       } catch (e) {
@@ -443,7 +433,7 @@
       }
       try {
         if (this.loaded.voice && this.buffers.voice) {
-          this._playBuffer('voice', 5.0, 1.0);
+          this._playBuffer('voice', 1.0, 1.0);
           return;
         }
         this.voiceAudio.currentTime = 0;
