@@ -322,19 +322,19 @@
         const src = this.ctx.createBufferSource();
         src.buffer = buf;
         src.playbackRate.value = rate != null ? rate : 1.0;
-      const g = this.ctx.createGain();
-      g.gain.value = vol != null ? vol : 1.0;
-      if (name === 'voice') {
-        const compressor = this.ctx.createDynamicsCompressor();
-        compressor.threshold.value = -20;
-        compressor.knee.value = 14;
-        compressor.ratio.value = 6;
-        compressor.attack.value = 0.003;
-        compressor.release.value = 0.24;
-        src.connect(g).connect(compressor).connect(this.ctx.destination);
-      } else {
-        src.connect(g).connect(this.master);
-      }
+        const g = this.ctx.createGain();
+        g.gain.value = vol != null ? vol : 1.0;
+        if (name === 'voice') {
+          const compressor = this.ctx.createDynamicsCompressor();
+          compressor.threshold.value = -20;
+          compressor.knee.value = 14;
+          compressor.ratio.value = 6;
+          compressor.attack.value = 0.003;
+          compressor.release.value = 0.24;
+          src.connect(g).connect(compressor).connect(this.ctx.destination);
+        } else {
+          src.connect(g).connect(this.master);
+        }
         src.start(this.ctx.currentTime, offset || 0);
         return true;
       } catch (e) {
