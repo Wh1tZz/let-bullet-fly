@@ -168,8 +168,11 @@
     firstShotPlayed: false,  // 鏍囪棣栧皠鏄惁宸叉斁杩?
     voiceAudio: null,  // HTML5 Audio 鍏冪礌(棣栧皠鍘熷０,鏋０ + "璁╁瓙寮归涓€浼氬効")
     gunshotAudio: null,  // HTML5 Audio 鍏冪礌(鍚庣画寮€鐏?鐢ㄦ埛瑁佸壀鐨勭函鏋０)
+    bgmAudio: null,  // 鑳屾櫙闊充箰(Funky House 寰幆)
     muted: false,
     sampleFiles: {
+      voice: 'let_bullets_fly.mp3',
+      gunshot: 'gunshot.mp3',
       ricochet: 'bullet_ricochet_sounddino.mp3',
       explosion: 'dynamite_explosion_mixkit.mp3',
       screamBandit: 'enemy_hit_mixkit.mp3',
@@ -182,11 +185,13 @@
     samplesPrepared: false,
     // 鐪熷疄 MP3 buffer 姹?鎯ㄥ彨/鐖嗙偢/寮瑰弽/閲戝竵/閾侀敜 鈥?鏋０淇濈暀鐢ㄦ埛鍘熺増)
     buffers: {
+      voice: null, gunshot: null,
       ricochet: null, explosion: null,
       screamBandit: null, screamSoldier: null, screamMerchant: null,
       coin: null, hammer: null,
     },
     loaded: {
+      voice: false, gunshot: false,
       ricochet: false, explosion: false,
       screamBandit: false, screamSoldier: false, screamMerchant: false,
       coin: false, hammer: false,
@@ -211,11 +216,18 @@
         // 鍑嗗棣栧皠鍘熷０(瀹屾暣鐗?淇濈暀"璁╁瓙寮归涓€浼氬効"鐏甸瓊)
         this.voiceAudio = new Audio('assets/let_bullets_fly.mp3');
         this.voiceAudio.preload = 'auto';
-        this.voiceAudio.volume = 0.95;
+        this.voiceAudio.volume = 1.0;
         // 鍑嗗鍚庣画寮€鐏０(鐢ㄦ埛瑁佸壀鐨勭函鏋０)
         this.gunshotAudio = new Audio('assets/gunshot.mp3');
         this.gunshotAudio.preload = 'auto';
         this.gunshotAudio.volume = 0.85;
+        // 鑳屾櫙闊充箰(Funky House 寰幆, 浣庨煶涓嶆抢鎴?
+        this.bgmAudio = new Audio('assets/bgm_electronic_house_novocal.mp3');
+        this.bgmAudio.loop = true;
+        this.bgmAudio.preload = 'auto';
+        this.bgmAudio.volume = 0.18;  // 鑳屾櫙闊充箰鍩虹闊?浣庝簬 voiceAudio 1.0, 閬垮厤鎸″帇棣栧皠)
+        this.bgmAudio.muted = false;
+        this._bgmBaseVolume = 0.18;   // ducking 鎭㈠鐢?
         // 寮傛棰勫姞杞界湡瀹?MP3 鈫?AudioBuffer(鎯ㄥ彨/鐖嗙偢/寮瑰弽/閲戝竵/閾侀敜)
         // 鐢??t= 鏃堕棿鎴抽槻姝㈡祻瑙堝櫒缂撳瓨鏃х増 MP3
         const base = 'assets/';
@@ -327,8 +339,30 @@
 
     // ====== 鍚勭被闊虫晥 ======
 
+    // 0) 鑳屾櫙闊充箰(寰幆鎾斁, 浣庨煶涓嶆抢鎴?br>
+    bgm(audible = true) {
+      if (!this.bgmAudio) return;
+      this.bgmAudio.muted = !audible;
+      this.bgmAudio.play().catch(() => {
+        // Audible autoplay is commonly blocked. Start muted so playback is
+        // already running, then shoot()/unlockAudio() can unmute it.
+        if (audible && this.bgmAudio) {
+          this.bgmAudio.muted = true;
+          this.bgmAudio.play().catch(() => {});
+        }
+      });
+    },
+    // 鍋滄鑳屾櫙闊充箰(閬垮厤 BGM 涓庢父鎴忕粨鏉熸笎鏃朵簨浠跺啿绐?
+    bgmStop() {
+      if (this.bgmAudio) { this.bgmAudio.pause(); this.bgmAudio.currentTime = 0; }
+    },
+
     // 1) 鏅€氬紑鐏?鐢ㄧ敤鎴疯鍓繃鐨勫師澹?MP3(绾灙澹?;鍔犺浇澶辫触閫€鍒板悎鎴?
     gunshot() {
+      if (this.loaded.gunshot && this.buffers.gunshot) {
+        this._playBuffer('gunshot', 1.25, 1.0);
+        return;
+      }
       if (this.gunshotAudio) {
         try {
           this.gunshotAudio.currentTime = 0;
@@ -365,7 +399,18 @@
       if (!this.voiceAudio) return;
       if (this.firstShotPlayed) { this.gunshot(); return; }
       this.firstShotPlayed = true;
+      // Ducking: 棣栧皠鐬枡 BGM 0.18 鈫?0.05, 1.5s 鍚庢參鎭㈠, 璁?璁╁瓙寮归涓€浼気 鍘熷０娓呭嚭鍦哄瓙
+      if (this.bgmAudio && !this.bgmAudio.paused) {
+        this.bgmAudio.volume = 0.05;
+        setTimeout(() => {
+          if (this.bgmAudio) this.bgmAudio.volume = this._bgmBaseVolume;
+        }, 1500);
+      }
       try {
+        if (this.loaded.voice && this.buffers.voice) {
+          this._playBuffer('voice', 1.8, 1.0);
+          return;
+        }
         this.voiceAudio.currentTime = 0;
         this.voiceAudio.play().catch(e => { console.warn('[AudioFX] voice play failed:', e); this.gunshot(); });
       } catch (e) {
@@ -562,6 +607,7 @@
   // 鐢ㄦ埛棣栨鐐瑰嚮/鎸夐敭鏃跺垵濮嬪寲闊抽(娴忚鍣ㄧ瓥鐣ヨ姹?
   function unlockAudio() {
     AudioFX.init();
+    AudioFX.bgm();  // 鍚屾椂鍚姩 BGM
     window.removeEventListener('click', unlockAudio);
     window.removeEventListener('keydown', unlockAudio);
     window.removeEventListener('touchstart', unlockAudio);
@@ -569,6 +615,10 @@
   window.addEventListener('click', unlockAudio, { once: true });
   window.addEventListener('keydown', unlockAudio, { once: true });
   window.addEventListener('touchstart', unlockAudio, { once: true });
+  // Attempt BGM immediately on page entry. Browsers that block audible
+  // autoplay will retry through unlockAudio on the first user interaction.
+  AudioFX.init();
+  AudioFX.bgm();
 
   const msgEl = document.getElementById('msg');
   const tipEl = document.getElementById('tip');
@@ -2036,6 +2086,7 @@
     // Shooting is handled on pointerdown and the canvas prevents the later
     // click event, so unlock/resume audio directly inside the user gesture.
     AudioFX.init();
+    AudioFX.bgm(true);
     // 110ms 鑺傛祦:娴忚鍣?pointerdown 鍋跺皵浼氬洜瑙︽懜/鍙屽嚮鍦?~10ms 鍐呰Е鍙戜袱娆?
     // 鏅€氱敤鎴锋渶蹇偣鍑婚棿闅?~150ms,110ms 鏃㈣兘鎸′綇璇Е鍙屽彂,鍙堜笉浼氳浜烘劅瑙夎繜閽?
     const now = performance.now();
