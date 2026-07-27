@@ -633,7 +633,8 @@
   const SHOTS_PER_LEVEL = 6;
   const BULLET_SPEED_BASE = 0.012;
   const BULLET_R_BASE = 0.0075; // 瀛愬脊纰版挒涓庢樉绀哄昂瀵稿悓姝ュ澶?25%
-  const PLAYER_SCALE = 1.10;
+  const PLAYER_SCALE = 1.22;
+  const ENEMY_SCALE = 1.20;
   const REVOLVER_MUZZLE_LENGTH = 22;
   const RIFLE_MUZZLE_LENGTH = 46;
   const PLAYER_RIFLE_MUZZLE_LENGTH = RIFLE_MUZZLE_LENGTH * PLAYER_SCALE;
@@ -1823,7 +1824,7 @@
     const isPlayerRagdoll = e.isPlayer === true;
     const look = e.look || 'bandit';
     const profile = ENEMY_BODY_PROFILES[look] || ENEMY_BODY_PROFILES.bandit;
-    const S = (e.scale || 1.0) * (isPlayerRagdoll ? 1 : 1.10);
+    const S = (e.scale || 1.0) * (isPlayerRagdoll ? 1 : ENEMY_SCALE);
     // 鍦熷尓鐦﹂珮銆佸畼鍏垫柟姝ｅ帤閲嶃€佸瘜鍟嗗ご澶ц吂鍦嗭紱涓昏姝讳骸鏈ㄥ伓缁存寔鍘熸瘮渚嬨€?
     const torsoW = (isPlayerRagdoll ? 16 : profile.torsoW) * S;
     const torsoH = (isPlayerRagdoll ? 22 : profile.torsoH) * S;
@@ -1839,7 +1840,10 @@
 
     // 姣忔晫浜虹嫭绔嬮殢鏈?璐ㄩ噺 92%鈥?08%(5鈥?0% 宸紓),涓綋鍋忕疆 卤0.2
     const massRand  = 0.92 + Math.random() * 0.16;
-    const densityScale = massRand * (isPlayerRagdoll ? 1 : profile.massScale);
+    // Preserve the previous enemy mass after enlarging the collision skeleton,
+    // so bullet and prop impacts retain their established responsiveness.
+    const enemyMassCompensation = Math.pow(1.10 / ENEMY_SCALE, 2);
+    const densityScale = massRand * (isPlayerRagdoll ? 1 : profile.massScale * enemyMassCompensation);
     const sideBias  = (Math.random() - 0.5) * 0.4;
     const slackVar  = 0.85 + Math.random() * 0.3;  // 鍏宠妭鏉惧紱搴?85%鈥?15%
 
@@ -3365,7 +3369,7 @@
     }
     // 鐢ㄥ悓涓€濂楁湪鍋堕鏋跺湪鐜╁鍘熶綅缃敓鎴愬彈鍑昏韩浣撱€?
     // 鏀惧ぇ鍚庣殑涓昏姝讳骸鏃朵粛淇濇寔鍚岀瓑浣撻噺锛屼笉鍐嶅嚭鐜板€掑湴鍚庤韩褰㈢缉灏忋€?
-    const playerRagdollScale = 1.75;
+    const playerRagdollScale = 1.75 * (PLAYER_SCALE / 1.10);
     const fakePlayer = {
       x: player.footX,
       y: player.footY - 34 * PLAYER_SCALE,
