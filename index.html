@@ -704,8 +704,9 @@
         hammerX: 0.33, hammerY: 0.24,
         ballR: 0.052, spikeCount: 12,
         ropeSeg: 14,
-        ropeStiffness: 0.82,
-        ropeDamping: 0.045,
+        ropeStiffness: 0.94,
+        ropeDamping: 0.08,
+        tetherStiffness: 0.995,
         continuousSwing: true,
         driveSpeed: 5.2,
         releaseKick: 1.35,
@@ -1694,6 +1695,7 @@
     const segN = prop.ropeSeg || 12;
     const ropeStiffness = prop.ropeStiffness ?? 0.90;
     const ropeDamping   = prop.ropeDamping ?? 0.12;
+    const tetherStiffness = prop.tetherStiffness ?? 0.99;
     const ropeCuttable  = prop.ropeCuttable !== false;
 
     // 鍙岀怀鍚婄潃鐨勫渾褰㈢嫾鐗欑悆锛涘渾褰㈢鎾炲崐寰勫氨鏄皷鍒哄缂樸€?
@@ -1810,6 +1812,18 @@
         pointB: { x: endPointLocal.x, y: endPointLocal.y },
         length: 0, stiffness: ropeStiffness, damping: ropeDamping,
       }));
+      // 分段绳负责可见的弯曲和摆动；这条定长主约束阻止重球把整条绳
+      // 拉成橡皮筋。它随所属绳子一起被切断，不会妨碍释放后的摆动。
+      const tether = M.Constraint.create({
+        bodyA: pivot,
+        bodyB: endBody,
+        pointB: { x: endPointLocal.x, y: endPointLocal.y },
+        length: dist,
+        stiffness: tetherStiffness,
+        damping: ropeDamping,
+      });
+      tether.isRopeTether = true;
+      constraints.push(tether);
 
       // 鏁存潯 sub-rope 鍔犲叆涓栫晫
       M.Composite.add(world, [pivot, ...segments, ...constraints]);
@@ -1877,7 +1891,7 @@
     seg.destroyed = true;
     // 2) 绉婚櫎鎵€鏈?缁忚繃"璇ユ鐨勭害鏉?閾句笂涓ゆ銆乸ivot 绔€佹湯绔?
     for (const c of subRope.constraints) {
-      if (c.bodyA === seg || c.bodyB === seg) {
+      if (c.bodyA === seg || c.bodyB === seg || c.isRopeTether) {
         M.Composite.remove(world, c);
       }
     }
