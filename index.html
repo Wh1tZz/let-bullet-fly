@@ -698,10 +698,10 @@
       {
         type: 'swing_hammer', id: 'level_spiked_ball',
         pivotL: { xR: 0.20, yR: 0.06 },
-        pivotR: { xR: 0.52, yR: 0.06 },
+        pivotR: { xR: 0.52, yR: 0.14 },
         // 切断左侧红绳后，球绕富商正上方的右主绳下摆。
-        // 加长后的摆长让球心最低点穿过富商上身，而不是只擦过帽子。
-        hammerX: 0.28, hammerY: 0.24,
+        // 黑色主绳采用低锚点短摆，最低点仍准确穿过富商头部和上身。
+        hammerX: 0.33, hammerY: 0.24,
         ballR: 0.052, spikeCount: 12,
         ropeSeg: 14,
         ropeStiffness: 0.82,
