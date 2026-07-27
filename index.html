@@ -191,6 +191,8 @@
     ctx: null,         // AudioContext(鐢ㄦ埛棣栨鐐瑰嚮鏃跺垱寤?
     master: null,      // 涓诲鐩?
     firstShotPlayed: false,  // 鏍囪棣栧皠鏄惁宸叉斁杩?
+    voiceTimer: null,
+    bgmRestoreTimer: null,
     voiceAudio: null,  // HTML5 Audio 鍏冪礌(棣栧皠鍘熷０,鏋０ + "璁╁瓙寮归涓€浼氬効")
     gunshotAudio: null,  // HTML5 Audio 鍏冪礌(鍚庣画寮€鐏?鐢ㄦ埛瑁佸壀鐨勭函鏋０)
     bgmAudio: null,  // 鑳屾櫙闊充箰(Funky House 寰幆)
@@ -427,24 +429,31 @@
       // Ducking: 棣栧皠鐬枡 BGM 0.18 鈫?0.05, 1.5s 鍚庢參鎭㈠, 璁?璁╁瓙寮归涓€浼気 鍘熷０娓呭嚭鍦哄瓙
       if (this.bgmAudio && !this.bgmAudio.paused) {
         this.bgmAudio.volume = 0.008;
-        setTimeout(() => {
+        if (this.bgmRestoreTimer) clearTimeout(this.bgmRestoreTimer);
+        this.bgmRestoreTimer = setTimeout(() => {
+          this.bgmRestoreTimer = null;
           if (this.bgmAudio) this.bgmAudio.volume = this._bgmBaseVolume;
-        }, 2200);
+        }, 3200);
       }
       // 首发与后续开火统一使用同一个 gunshot 音源和相同增益；
       // 台词素材从 1.70 秒开始，跳过其中自带、响度不同的第一声枪响。
       this.gunshot();
       const voiceOffset = 1.70;
-      try {
-        if (this.loaded.voice && this.buffers.voice) {
-          this._playBuffer('voice', 1.0, 1.0, voiceOffset);
-          return;
+      const voiceDelayMs = 1400;
+      if (this.voiceTimer) clearTimeout(this.voiceTimer);
+      this.voiceTimer = setTimeout(() => {
+        this.voiceTimer = null;
+        try {
+          if (this.loaded.voice && this.buffers.voice) {
+            this._playBuffer('voice', 1.0, 1.0, voiceOffset);
+            return;
+          }
+          this.voiceAudio.currentTime = voiceOffset;
+          this.voiceAudio.play().catch(e => { console.warn('[AudioFX] voice play failed:', e); });
+        } catch (e) {
+          console.warn('[AudioFX] voice play failed:', e);
         }
-        this.voiceAudio.currentTime = voiceOffset;
-        this.voiceAudio.play().catch(e => { console.warn('[AudioFX] voice play failed:', e); });
-      } catch (e) {
-        console.warn('[AudioFX] voice play failed:', e);
-      }
+      }, voiceDelayMs);
     },
 
     // 3) 瀛愬脊鍙嶅脊:浼樺厛鐪熷疄"瀛愬脊鍑讳腑閲戝睘"褰曢煶(ricochet_real.mp3),澶辫触 fallback 鍚堟垚
@@ -6450,6 +6459,15 @@
   function restart() {
     overlay.classList.remove('show');
     AudioFX.firstShotPlayed = false;
+    if (AudioFX.voiceTimer) {
+      clearTimeout(AudioFX.voiceTimer);
+      AudioFX.voiceTimer = null;
+    }
+    if (AudioFX.bgmRestoreTimer) {
+      clearTimeout(AudioFX.bgmRestoreTimer);
+      AudioFX.bgmRestoreTimer = null;
+    }
+    if (AudioFX.bgmAudio) AudioFX.bgmAudio.volume = AudioFX._bgmBaseVolume;
     if (AudioFX.voiceAudio) {
       AudioFX.voiceAudio.pause();
       AudioFX.voiceAudio.currentTime = 0;
