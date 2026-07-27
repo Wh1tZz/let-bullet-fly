@@ -704,9 +704,10 @@
         hammerX: 0.33, hammerY: 0.24,
         ballR: 0.052, spikeCount: 12,
         ropeSeg: 14,
-        ropeStiffness: 0.94,
-        ropeDamping: 0.08,
-        tetherStiffness: 0.995,
+        ropeStiffness: 0.70,
+        ropeDamping: 0.05,
+        elasticStiffness: 0.14,
+        elasticRestRatio: 1.00,
         continuousSwing: true,
         driveSpeed: 5.2,
         releaseKick: 1.35,
@@ -825,7 +826,7 @@
       impulseScale: 0.45, bulletLoss: 0.25, spinScale: 0.78,
       damageSpeed: 1.0, damageImpact: 5.0,
       ropeColor: '#3a2818',
-      ropeThickness: 1.8,
+      ropeThickness: 2.4,
     },
   };
 
@@ -1695,7 +1696,8 @@
     const segN = prop.ropeSeg || 12;
     const ropeStiffness = prop.ropeStiffness ?? 0.90;
     const ropeDamping   = prop.ropeDamping ?? 0.12;
-    const tetherStiffness = prop.tetherStiffness ?? 0.99;
+    const elasticStiffness = prop.elasticStiffness ?? 0.14;
+    const elasticRestRatio = prop.elasticRestRatio ?? 0.90;
     const ropeCuttable  = prop.ropeCuttable !== false;
 
     // 鍙岀怀鍚婄潃鐨勫渾褰㈢嫾鐗欑悆锛涘渾褰㈢鎾炲崐寰勫氨鏄皷鍒哄缂樸€?
@@ -1812,14 +1814,14 @@
         pointB: { x: endPointLocal.x, y: endPointLocal.y },
         length: 0, stiffness: ropeStiffness, damping: ropeDamping,
       }));
-      // 分段绳负责可见的弯曲和摆动；这条定长主约束阻止重球把整条绳
-      // 拉成橡皮筋。它随所属绳子一起被切断，不会妨碍释放后的摆动。
+      // 分段绳负责可见的弯曲；隐藏弹性约束比当前距离短一点，让两条绳
+      // 始终带着预张力拽住铁球。切断其中一条后，另一条会伸长、回弹并摆动。
       const tether = M.Constraint.create({
         bodyA: pivot,
         bodyB: endBody,
         pointB: { x: endPointLocal.x, y: endPointLocal.y },
-        length: dist,
-        stiffness: tetherStiffness,
+        length: dist * elasticRestRatio,
+        stiffness: elasticStiffness,
         damping: ropeDamping,
       });
       tether.isRopeTether = true;
