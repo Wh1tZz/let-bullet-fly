@@ -192,7 +192,6 @@
     master: null,      // 涓诲鐩?
     firstShotPlayed: false,  // 鏍囪棣栧皠鏄惁宸叉斁杩?
     voiceTimer: null,
-    bgmRestoreTimer: null,
     voiceAudio: null,  // HTML5 Audio 鍏冪礌(棣栧皠鍘熷０,鏋０ + "璁╁瓙寮归涓€浼氬効")
     gunshotAudio: null,  // HTML5 Audio 鍏冪礌(鍚庣画寮€鐏?鐢ㄦ埛瑁佸壀鐨勭函鏋０)
     bgmAudio: null,  // 鑳屾櫙闊充箰(Funky House 寰幆)
@@ -427,14 +426,6 @@
       if (this.firstShotPlayed) { this.gunshot(); return; }
       this.firstShotPlayed = true;
       // Ducking: 棣栧皠鐬枡 BGM 0.18 鈫?0.05, 1.5s 鍚庢參鎭㈠, 璁?璁╁瓙寮归涓€浼気 鍘熷０娓呭嚭鍦哄瓙
-      if (this.bgmAudio && !this.bgmAudio.paused) {
-        this.bgmAudio.volume = 0.008;
-        if (this.bgmRestoreTimer) clearTimeout(this.bgmRestoreTimer);
-        this.bgmRestoreTimer = setTimeout(() => {
-          this.bgmRestoreTimer = null;
-          if (this.bgmAudio) this.bgmAudio.volume = this._bgmBaseVolume;
-        }, 3200);
-      }
       // 首发与后续开火统一使用同一个 gunshot 音源和相同增益；
       // 台词素材从 1.70 秒开始，跳过其中自带、响度不同的第一声枪响。
       this.gunshot();
@@ -6463,11 +6454,6 @@
       clearTimeout(AudioFX.voiceTimer);
       AudioFX.voiceTimer = null;
     }
-    if (AudioFX.bgmRestoreTimer) {
-      clearTimeout(AudioFX.bgmRestoreTimer);
-      AudioFX.bgmRestoreTimer = null;
-    }
-    if (AudioFX.bgmAudio) AudioFX.bgmAudio.volume = AudioFX._bgmBaseVolume;
     if (AudioFX.voiceAudio) {
       AudioFX.voiceAudio.pause();
       AudioFX.voiceAudio.currentTime = 0;
