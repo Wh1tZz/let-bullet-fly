@@ -116,6 +116,28 @@
     padding: 10px 24px; font-size: 16px; cursor: pointer;
     background: #d96f32; color: #fff; border: none; border-radius: 4px;
   }
+  #startGate {
+    position: fixed; inset: 0; z-index: 40;
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at center, rgba(246,223,160,0.18), rgba(28,17,10,0.70));
+    backdrop-filter: blur(2px);
+    transition: opacity .22s ease, visibility .22s ease;
+  }
+  #startGate.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+  #startGameBtn {
+    width: 88px; height: 88px; padding: 0; border: 2px solid rgba(255,244,208,0.88);
+    border-radius: 50%; cursor: pointer; background: rgba(238,184,81,0.92);
+    box-shadow: 0 12px 34px rgba(38,20,7,0.42), inset 0 2px 0 rgba(255,255,255,0.38);
+    display: grid; place-items: center;
+  }
+  #startGameBtn::before {
+    content: ''; width: 0; height: 0; margin-left: 7px;
+    border-top: 16px solid transparent; border-bottom: 16px solid transparent;
+    border-left: 25px solid #3c2516;
+  }
+  #startGameBtn:hover { transform: scale(1.05); }
+  #startGameBtn:active { transform: scale(0.97); }
+  #startGameBtn:focus-visible { outline: 3px solid #fff3bf; outline-offset: 5px; }
   @media (max-width: 760px) {
     #hud { right: 14px; font-size: 12px; }
     #tip { top: 98px; max-width: calc(100vw - 48px); text-align: center; }
@@ -144,6 +166,9 @@
 </div>
 <div id="tip" role="status" aria-live="polite"></div>
 <canvas id="game"></canvas>
+<div id="startGate">
+  <button id="startGameBtn" type="button" aria-label="开始游戏"></button>
+</div>
 <div id="overlay">
   <h2 id="msg">关卡结束</h2>
   <button id="restartBtn" type="button" onclick="restart()">重新挑战</button>
@@ -622,6 +647,19 @@
 
   const msgEl = document.getElementById('msg');
   const tipEl = document.getElementById('tip');
+  const startGate = document.getElementById('startGate');
+  const startGameBtn = document.getElementById('startGameBtn');
+  let gameStarted = false;
+
+  startGameBtn.addEventListener('click', () => {
+    AudioFX.init();
+    AudioFX.bgm(true);
+    if (AudioFX.ctx && AudioFX.ctx.state === 'suspended') {
+      AudioFX.ctx.resume().then(() => AudioFX.bgm(true)).catch(() => {});
+    }
+    gameStarted = true;
+    startGate.classList.add('hidden');
+  });
 
   // ====== 鍏冲崱鏁版嵁(鏁版嵁椹卞姩) ======
   // 鏈哄叧杩峰眬:婊氭《銆佽惤鐭炽€佽繛閿佺垎鐐搞€佸闈㈠弽寮瑰洓鏉℃竻鏅拌В娉?
@@ -6430,7 +6468,10 @@
   layout();
 
   function loop() {
-    try { update(); draw(); }
+    try {
+      if (gameStarted) update();
+      draw();
+    }
     catch (e) { console.error('[loop error]', e); if (!loop._errored) { loop._errored = true; alert('娓告垙鍑洪敊: ' + e.message); } }
     requestAnimationFrame(loop);
   }
