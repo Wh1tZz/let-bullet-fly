@@ -196,7 +196,7 @@
     bgmAudio: null,  // 鑳屾櫙闊充箰(Funky House 寰幆)
     muted: false,
     sampleFiles: {
-      voice: 'let_bullets_fly_balanced.mp3',
+      voice: 'let_bullets_fly_loud.mp3',
       gunshot: 'gunshot.mp3',
       ricochet: 'bullet_ricochet_sounddino.mp3',
       explosion: 'dynamite_explosion_mixkit.mp3',
@@ -239,7 +239,7 @@
         this.master.gain.value = 0.70;
         this.master.connect(this.ctx.destination);
         // 鍑嗗棣栧皠鍘熷０(瀹屾暣鐗?淇濈暀"璁╁瓙寮归涓€浼氬効"鐏甸瓊)
-        this.voiceAudio = new Audio('assets/let_bullets_fly_balanced.mp3');
+        this.voiceAudio = new Audio('assets/let_bullets_fly_loud.mp3');
         this.voiceAudio.preload = 'auto';
         this.voiceAudio.volume = 1.0;
         // 鍑嗗鍚庣画寮€鐏０(鐢ㄦ埛瑁佸壀鐨勭函鏋０)
@@ -699,16 +699,13 @@
         type: 'swing_hammer', id: 'level_spiked_ball',
         pivotL: { xR: 0.20, yR: 0.06 },
         pivotR: { xR: 0.52, yR: 0.06 },
-        // 切断左侧红绳后，球绕富商正上方的右主绳下摆。
-        // 加长后的摆长让球心最低点穿过富商上身，而不是只擦过帽子。
-        hammerX: 0.28, hammerY: 0.24,
+        hammerX: 0.31, hammerY: 0.22,
         ballR: 0.052, spikeCount: 12,
         ropeSeg: 14,
-        ropeStiffness: 0.82,
-        ropeDamping: 0.045,
+        ropeStiffness: 0.90,
+        ropeDamping: 0.12,
         continuousSwing: true,
-        driveSpeed: 5.2,
-        releaseKick: 1.35,
+        driveSpeed: 4.2,
         ropeCuttable: true,
       },
     ],
@@ -820,9 +817,9 @@
     swing_hammer: {
       // 鍙岀怀鐙肩墮鐞?绾㈣壊閲婃斁缁抽攣浣嶏紝鍒囨柇鍚庣敱涓荤怀甯︾潃鍦嗗舰鐙肩墮鐞冩憜鍔?
       label: 'prop_hammer', category: 'swingHammer', shape: 'swing_hammer',
-      density: 0.018, friction: 0.34, frictionAir: 0.0025, restitution: 0.10,
-      impulseScale: 0.45, bulletLoss: 0.25, spinScale: 0.78,
-      damageSpeed: 1.0, damageImpact: 5.0,
+      density: 0.025, friction: 0.4, frictionAir: 0.006, restitution: 0.05,
+      impulseScale: 0.35, bulletLoss: 0.25, spinScale: 0.7,
+      damageSpeed: 1.2, damageImpact: 6.0,
       ropeColor: '#3a2818',
       ropeThickness: 1.8,
     },
@@ -1847,7 +1844,6 @@
       continuousSwing: prop.continuousSwing === true,
       driveSpeed: prop.driveSpeed ?? 3.0,
       driveZone: prop.driveZone ?? 0.24,
-      releaseKick: prop.releaseKick ?? 1.1,
       swingDirection: 1,
       propId: prop.id,
     });
@@ -1898,29 +1894,6 @@
     // 鍙岀怀閾侀敜:鍙︿竴鏉?sub-rope 浠嶈繛鐫€,rope.isCut 淇濇寔 false(鍙户缁憜鍔?
     if (rope.kind === 'swing_hammer') {
       rope.hammerBody.ropeReleased = true;
-      // 红色释放绳断开时，给球一个很小的下摆切向初速度，克服双绳
-      // 刚解除约束时的滞涩；之后的轨迹仍完全由主绳、重力和惯性决定。
-      if (subRope.role === 'release') {
-        const swingRope = rope.subRopes.find(s => s.role === 'swing' && !s.isCut);
-        const pivot = swingRope?.pivot;
-        const load = rope.hammerBody;
-        if (pivot && load) {
-          const dx = load.position.x - pivot.position.x;
-          const dy = load.position.y - pivot.position.y;
-          const radius = Math.hypot(dx, dy);
-          if (radius > 1) {
-            const tx = dy / radius;
-            const ty = -dx / radius;
-            const currentTangentSpeed = load.velocity.x * tx + load.velocity.y * ty;
-            const kick = Math.max(0, rope.releaseKick - currentTangentSpeed);
-            M.Body.setVelocity(load, {
-              x: load.velocity.x + tx * kick,
-              y: load.velocity.y + ty * kick,
-            });
-            rope.swingDirection = 1;
-          }
-        }
-      }
       if (rope.subRopes.every(s => s.isCut)) {
         rope.isCut = true;
         rope.hammerBody.fullyReleased = true;
