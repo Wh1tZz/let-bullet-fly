@@ -666,8 +666,8 @@
     },
     barrel: {
       label: 'prop_barrel', category: 'rollingObject', shape: 'circle',
-      density: 0.00165, friction: 0.14, frictionAir: 0.004, restitution: 0.16,
-      impulseScale: 0.72, bulletLoss: 0.20, spinScale: 0.9,
+      density: 0.00105, friction: 0.20, frictionAir: 0.0025, restitution: 0.14,
+      impulseScale: 0.98, bulletLoss: 0.16, spinScale: 1.2,
       // 鏈ㄦ《浠ユ粴鍔ㄧ⒕鍘嬩负鏍稿績鐜╂硶锛氶槇鍊肩暐浣庯紝骞跺湪浼ゅ璁＄畻涓鍏ユ《杈圭紭杞€熴€?
       damageSpeed: 0.45, damageImpact: 0.9,
     },
@@ -3775,6 +3775,18 @@
               // 鍙敤 applyImpulseAtPoint 鐨勮嚜鐒舵壄鐭?鍩轰簬 hitPoint 鐩稿璐ㄥ績鐨勫亸绉?
               // 涓績鍛戒腑 r鈮? 鈫?绾钩绉?杈圭紭/涓婃柟鍛戒腑 r鈮? 鈫?鏃嬭浆/缈诲€?
               applyImpulseAtPoint(prop, hitPoint, { x: ux * impulseMag, y: uy * impulseMag });
+              // A centred hit has almost no natural torque. Give barrels enough
+              // matching angular speed to visibly roll instead of only sliding.
+              if (prop.propType === 'barrel' && prop.circleRadius && Math.abs(prop.velocity.x) > 0.18) {
+                const rollDirection = Math.sign(prop.velocity.x);
+                const targetSpin = rollDirection * Math.min(
+                  0.32,
+                  Math.max(0.10, Math.abs(prop.velocity.x) / prop.circleRadius * phys.spinScale)
+                );
+                if (Math.abs(prop.angularVelocity) < Math.abs(targetSpin)) {
+                  M.Body.setAngularVelocity(prop, targetSpin);
+                }
+              }
             }
             // 瀛愬脊鎸夋硶绾垮弽灏?
             const n = hitInfo.normal || estimateNormal(b, prop);
