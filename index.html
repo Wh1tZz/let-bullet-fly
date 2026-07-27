@@ -421,7 +421,7 @@
     // 2) 棣栧皠:鐢ㄧ敤鎴锋彁渚涚殑鍘熷０ MP3(鏋０ + 濮滄枃"璁╁瓙寮归涓€浼氬効")
     firstShot() {
       if (!this.ctx) this.init();
-      if (!this.voiceAudio) return;
+      if (!this.voiceAudio) { this.gunshot(); return; }
       if (this.firstShotPlayed) { this.gunshot(); return; }
       this.firstShotPlayed = true;
       // Ducking: 棣栧皠鐬枡 BGM 0.18 鈫?0.05, 1.5s 鍚庢參鎭㈠, 璁?璁╁瓙寮归涓€浼気 鍘熷０娓呭嚭鍦哄瓙
@@ -431,15 +431,19 @@
           if (this.bgmAudio) this.bgmAudio.volume = this._bgmBaseVolume;
         }, 2200);
       }
+      // 首发与后续开火统一使用同一个 gunshot 音源和相同增益；
+      // 台词素材从 1.70 秒开始，跳过其中自带、响度不同的第一声枪响。
+      this.gunshot();
+      const voiceOffset = 1.70;
       try {
         if (this.loaded.voice && this.buffers.voice) {
-          this._playBuffer('voice', 1.0, 1.0);
+          this._playBuffer('voice', 1.0, 1.0, voiceOffset);
           return;
         }
-        this.voiceAudio.currentTime = 0;
-        this.voiceAudio.play().catch(e => { console.warn('[AudioFX] voice play failed:', e); this.gunshot(); });
+        this.voiceAudio.currentTime = voiceOffset;
+        this.voiceAudio.play().catch(e => { console.warn('[AudioFX] voice play failed:', e); });
       } catch (e) {
-        this.gunshot();
+        console.warn('[AudioFX] voice play failed:', e);
       }
     },
 
