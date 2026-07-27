@@ -2033,6 +2033,9 @@
   // 涓婃鍙戝皠鏃堕棿鎴?闃插弻鍑?蹇繛鐐硅瑙?鈫?瀛愬脊杩炲彂 bug)
   let _lastShootAt = 0;
   function shoot() {
+    // Shooting is handled on pointerdown and the canvas prevents the later
+    // click event, so unlock/resume audio directly inside the user gesture.
+    AudioFX.init();
     // 110ms 鑺傛祦:娴忚鍣?pointerdown 鍋跺皵浼氬洜瑙︽懜/鍙屽嚮鍦?~10ms 鍐呰Е鍙戜袱娆?
     // 鏅€氱敤鎴锋渶蹇偣鍑婚棿闅?~150ms,110ms 鏃㈣兘鎸′綇璇Е鍙屽彂,鍙堜笉浼氳浜烘劅瑙夎繜閽?
     const now = performance.now();
@@ -6353,6 +6356,11 @@
   // ====== 閲嶅惎 ======
   function restart() {
     overlay.classList.remove('show');
+    AudioFX.firstShotPlayed = false;
+    if (AudioFX.voiceAudio) {
+      AudioFX.voiceAudio.pause();
+      AudioFX.voiceAudio.currentTime = 0;
+    }
     for (const b of bullets) M.Composite.remove(world, b.body);
     bullets = [];
     shotsLeft = SHOTS_PER_LEVEL;
