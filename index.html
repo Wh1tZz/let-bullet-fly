@@ -698,16 +698,14 @@
       {
         type: 'swing_hammer', id: 'level_spiked_ball',
         pivotL: { xR: 0.20, yR: 0.06 },
-        pivotR: { xR: 0.52, yR: 0.14 },
+        pivotR: { xR: 0.52, yR: 0.06 },
         // 切断左侧红绳后，球绕富商正上方的右主绳下摆。
-        // 黑色主绳采用低锚点短摆，最低点仍准确穿过富商头部和上身。
-        hammerX: 0.33, hammerY: 0.24,
+        // 加长后的摆长让球心最低点穿过富商上身，而不是只擦过帽子。
+        hammerX: 0.28, hammerY: 0.24,
         ballR: 0.052, spikeCount: 12,
         ropeSeg: 14,
-        ropeStiffness: 0.70,
-        ropeDamping: 0.05,
-        elasticStiffness: 0.14,
-        elasticRestRatio: 1.00,
+        ropeStiffness: 0.82,
+        ropeDamping: 0.045,
         continuousSwing: true,
         driveSpeed: 5.2,
         releaseKick: 1.35,
@@ -826,7 +824,7 @@
       impulseScale: 0.45, bulletLoss: 0.25, spinScale: 0.78,
       damageSpeed: 1.0, damageImpact: 5.0,
       ropeColor: '#3a2818',
-      ropeThickness: 2.4,
+      ropeThickness: 1.8,
     },
   };
 
@@ -1696,8 +1694,6 @@
     const segN = prop.ropeSeg || 12;
     const ropeStiffness = prop.ropeStiffness ?? 0.90;
     const ropeDamping   = prop.ropeDamping ?? 0.12;
-    const elasticStiffness = prop.elasticStiffness ?? 0.14;
-    const elasticRestRatio = prop.elasticRestRatio ?? 0.90;
     const ropeCuttable  = prop.ropeCuttable !== false;
 
     // 鍙岀怀鍚婄潃鐨勫渾褰㈢嫾鐗欑悆锛涘渾褰㈢鎾炲崐寰勫氨鏄皷鍒哄缂樸€?
@@ -1814,18 +1810,6 @@
         pointB: { x: endPointLocal.x, y: endPointLocal.y },
         length: 0, stiffness: ropeStiffness, damping: ropeDamping,
       }));
-      // 分段绳负责可见的弯曲；隐藏弹性约束比当前距离短一点，让两条绳
-      // 始终带着预张力拽住铁球。切断其中一条后，另一条会伸长、回弹并摆动。
-      const tether = M.Constraint.create({
-        bodyA: pivot,
-        bodyB: endBody,
-        pointB: { x: endPointLocal.x, y: endPointLocal.y },
-        length: dist * elasticRestRatio,
-        stiffness: elasticStiffness,
-        damping: ropeDamping,
-      });
-      tether.isRopeTether = true;
-      constraints.push(tether);
 
       // 鏁存潯 sub-rope 鍔犲叆涓栫晫
       M.Composite.add(world, [pivot, ...segments, ...constraints]);
@@ -1893,7 +1877,7 @@
     seg.destroyed = true;
     // 2) 绉婚櫎鎵€鏈?缁忚繃"璇ユ鐨勭害鏉?閾句笂涓ゆ銆乸ivot 绔€佹湯绔?
     for (const c of subRope.constraints) {
-      if (c.bodyA === seg || c.bodyB === seg || c.isRopeTether) {
+      if (c.bodyA === seg || c.bodyB === seg) {
         M.Composite.remove(world, c);
       }
     }
