@@ -199,7 +199,7 @@
     sampleFiles: {
       voice: 'let_bullets_fly_balanced.mp3',
       gunshot: 'gunshot.mp3',
-      ricochet: 'bullet_ricochet_sounddino.mp3',
+      ricochet: 'ricochet_real.mp3',
       explosion: 'dynamite_explosion_mixkit.mp3',
       screamBandit: 'enemy_hit_mixkit.mp3',
       screamSoldier: 'soldier_hit_mixkit.mp3',
@@ -315,9 +315,12 @@
       if (!this.ctx || !buf || !this.loaded[name]) {
         return this._playElement(name, vol, rate, offset);
       }
-      // Chrome 绛栫暐:AudioContext 鍙兘 suspended,闇€瑕?resume 鍚?start() 鎵嶇敓鏁?
+      // A source started while the context is still suspended can be reported as
+      // successful but remain silent. Use the HTML audio fallback immediately;
+      // the next user gesture will resume the Web Audio context.
       if (this.ctx.state === 'suspended') {
-        try { this.ctx.resume(); } catch (e) {}
+        this.ctx.resume().catch(() => {});
+        return this._playElement(name, vol, rate, offset);
       }
       try {
         const src = this.ctx.createBufferSource();
@@ -449,18 +452,18 @@
 
     // 3) 瀛愬脊鍙嶅脊:浼樺厛鐪熷疄"瀛愬脊鍑讳腑閲戝睘"褰曢煶(ricochet_real.mp3),澶辫触 fallback 鍚堟垚
     ricochet() {
-      if (this._playBuffer('ricochet', 0.76, 0.94 + Math.random() * 0.12)) return;
+      const realPlayed = this._playBuffer('ricochet', 0.90, 0.94 + Math.random() * 0.12);
       if (!this.ctx) return;
       const c = this.ctx, t = c.currentTime;
       // 鐭績閲戝睘 click + 婊戦煶
       const click = this.noise(0.015, 7000, 'highpass');
-      const cg = this.envGain(0.28, t, 0.001, 0.025);
+      const cg = this.envGain(realPlayed ? 0.13 : 0.28, t, 0.001, 0.025);
       click.src.connect(click.out).connect(cg).connect(this.master);
       click.src.start(t);
       const main = c.createOscillator();
       main.type = 'sine'; main.frequency.setValueAtTime(3200, t);
       main.frequency.exponentialRampToValueAtTime(2800, t + 0.10);
-      const mainG = this.envGain(0.32, t, 0.001, 0.14);
+      const mainG = this.envGain(realPlayed ? 0.16 : 0.32, t, 0.001, 0.14);
       main.connect(mainG).connect(this.master);
       main.start(t); main.stop(t + 0.18);
       const slide = c.createOscillator();
@@ -539,7 +542,7 @@
 
     // 6) 閲戝竵鎺夎惤:浼樺厛鐪熷疄閲戝竵纰版挒澹?澶辫触 fallback 鍚堟垚
     coinDrop() {
-      if (this._playBuffer('coin', 0.88, 0.95 + Math.random() * 0.10)) return;
+      const realPlayed = this._playBuffer('coin', 1.0, 0.95 + Math.random() * 0.10);
       if (!this.ctx) return;
       const c = this.ctx, t = c.currentTime;
       // 3 涓竻鑴?dings(鑰佽檸鏈烘劅)
@@ -548,7 +551,7 @@
        { dt: 0.14, f: 1900, dur: 0.18 }].forEach(d => {
         const osc = c.createOscillator();
         osc.type = 'triangle'; osc.frequency.value = d.f;
-        const g = this.envGain(0.22, t + d.dt, 0.002, d.dur);
+        const g = this.envGain(realPlayed ? 0.10 : 0.22, t + d.dt, 0.002, d.dur);
         osc.connect(g).connect(this.master);
         osc.start(t + d.dt); osc.stop(t + d.dt + d.dur + 0.05);
       });
@@ -2591,6 +2594,9 @@
   function spawnMerchantCoins(r, x, y, dx, dy) {
     if (r.coinsDropped) return;
     r.coinsDropped = true;
+    // Keep the sound and the visual event coupled so neither can disappear
+    // independently when a merchant is killed by a bullet or a moving prop.
+    AudioFX.coinDrop();
     const count = 13;
     for (let i = 0; i < count; i++) {
       const radius = 2.5 + Math.random() * 1.2;
@@ -3087,7 +3093,6 @@
 
     // 涓夌被鏁屼汉浣跨敤鍚勮嚜鐨勫彈鍑绘儴鍙紱瀵屽晢鍙﹀鍙犲姞閲戝竵鏁ｈ惤澹般€?
     AudioFX.scream('ragdoll:' + (r.look || 'bandit'));
-    if (r.look === 'merchant') AudioFX.coinDrop();
 
     // 闃插祵鍏?
     let maxOverlap = 0;
