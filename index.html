@@ -199,7 +199,7 @@
     sampleFiles: {
       voice: 'let_bullets_fly_balanced.mp3',
       gunshot: 'gunshot.mp3',
-      ricochet: 'ricochet_real.mp3',
+      ricochet: 'bullet_ricochet_sounddino.mp3',
       explosion: 'dynamite_explosion_mixkit.mp3',
       screamBandit: 'enemy_hit_mixkit.mp3',
       screamSoldier: 'soldier_hit_mixkit.mp3',
@@ -450,20 +450,20 @@
       }, voiceDelayMs);
     },
 
-    // 3) 瀛愬脊鍙嶅脊:浼樺厛鐪熷疄"瀛愬脊鍑讳腑閲戝睘"褰曢煶(ricochet_real.mp3),澶辫触 fallback 鍚堟垚
+    // 3) 子弹反弹：只要素材能播放就不再叠加合成金属声，避免连续反弹时出现劈啪噪声。
     ricochet() {
-      const realPlayed = this._playBuffer('ricochet', 0.90, 0.94 + Math.random() * 0.12);
+      if (this._playBuffer('ricochet', 0.86, 0.96 + Math.random() * 0.08)) return;
       if (!this.ctx) return;
       const c = this.ctx, t = c.currentTime;
       // 鐭績閲戝睘 click + 婊戦煶
       const click = this.noise(0.015, 7000, 'highpass');
-      const cg = this.envGain(realPlayed ? 0.13 : 0.28, t, 0.001, 0.025);
+      const cg = this.envGain(0.28, t, 0.001, 0.025);
       click.src.connect(click.out).connect(cg).connect(this.master);
       click.src.start(t);
       const main = c.createOscillator();
       main.type = 'sine'; main.frequency.setValueAtTime(3200, t);
       main.frequency.exponentialRampToValueAtTime(2800, t + 0.10);
-      const mainG = this.envGain(realPlayed ? 0.16 : 0.32, t, 0.001, 0.14);
+      const mainG = this.envGain(0.32, t, 0.001, 0.14);
       main.connect(mainG).connect(this.master);
       main.start(t); main.stop(t + 0.18);
       const slide = c.createOscillator();
@@ -542,7 +542,7 @@
 
     // 6) 閲戝竵鎺夎惤:浼樺厛鐪熷疄閲戝竵纰版挒澹?澶辫触 fallback 鍚堟垚
     coinDrop() {
-      const realPlayed = this._playBuffer('coin', 1.0, 0.95 + Math.random() * 0.10);
+      if (this._playBuffer('coin', 1.0, 0.95 + Math.random() * 0.10)) return;
       if (!this.ctx) return;
       const c = this.ctx, t = c.currentTime;
       // 3 涓竻鑴?dings(鑰佽檸鏈烘劅)
@@ -551,7 +551,7 @@
        { dt: 0.14, f: 1900, dur: 0.18 }].forEach(d => {
         const osc = c.createOscillator();
         osc.type = 'triangle'; osc.frequency.value = d.f;
-        const g = this.envGain(realPlayed ? 0.10 : 0.22, t + d.dt, 0.002, d.dur);
+        const g = this.envGain(0.22, t + d.dt, 0.002, d.dur);
         osc.connect(g).connect(this.master);
         osc.start(t + d.dt); osc.stop(t + d.dt + d.dur + 0.05);
       });
